@@ -1,0 +1,61 @@
+# .github/workflows/sync-sourceforge.yml
+name: Sync Peace source from SourceForge
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # daily at 9am UTC
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new source release
+        id: check
+        run: |
+          MD5=$(curl -s "https://sourceforge.net/projects/peace-equalizer-apo-extension/files/Source%20code/Source%20code.zip/download?use_mirror=autoselect" | md5sum | cut -d' ' -f1)
+          echo "remote_md5=$MD5" >> $GITHUB_OUTPUT
+
+          if [ -f .sourceforge_md5 ]; then
+            echo "local_md5=$(cat .sourceforge_md5)" >> $GITHUB_OUTPUT
+          else
+            echo "local_md5=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if unchanged
+        if: steps.check.outputs.remote_md5 == steps.check.outputs.local_md5
+        run: |
+          echo "No change detected, skipping."
+          exit 0
+
+      - name: Download and extract source
+        if: steps.check.outputs.remote_md5 != steps.check.outputs.local_md5
+        run: |
+          curl -L -o source.zip "https://sourceforge.net/projects/peace-equalizer-apo-extension/files/Source%20code/Source%20code.zip/download"
+          mkdir -p upstream
+          unzip -o source.zip -d upstream
+          echo "${{ steps.check.outputs.remote_md5 }}" > .sourceforge_md5
+
+      - name: Create PR
+        if: steps.check.outputs.remote_md5 != steps.check.outputs.local_md5
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="upstream-sync-${{ steps.check.outputs.remote_md5 }}"
+          git checkout -b $BRANCH
+          git add upstream/ .sourceforge_md5
+          git commit -m "Sync upstream source (MD5: ${{ steps.check.outputs.remote_md5 }})"
+          git push origin $BRANCH
+          gh pr create \
+            --title "Upstream sync: new Peace source release" \
+            --body "New source detected on SourceForge. MD5: ${{ steps.check.outputs.remote_md5 }}" \
+            --base main \
+            --head $BRANCH
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
