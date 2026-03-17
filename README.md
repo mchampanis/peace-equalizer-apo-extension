@@ -1,11 +1,12 @@
-# Peace Equalizer APO Extension - Source Sync
+# Peace Equalizer APO Extension - source sync
 
-This repository is an automated mirror that synchronizes the source code of the [Peace Equalizer APO extension](https://sourceforge.net/projects/peace-equalizer-apo-extension/) from SourceForge to GitHub.
+This repo is an automated mirror that synchronizes the source code of [Peace Equalizer APO extension](https://sourceforge.net/projects/peace-equalizer-apo-extension/) from SourceForge to GitHub.
 
 ## How it works
 
-A GitHub Action runs daily to:
-1. Check the MD5 hash of the latest source code on SourceForge.
+A GitHub Action runs daily:
+
+1. Check the MD5 hash of the latest source code archive on SourceForge
 2. If a new version is detected, it downloads and extracts it into the `upstream/` directory.
 3. It creates a new branch and opens a Pull Request with the updated source code.
 

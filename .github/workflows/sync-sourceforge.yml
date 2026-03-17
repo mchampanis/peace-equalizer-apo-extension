@@ -38,9 +38,20 @@ jobs:
         if: steps.check.outputs.remote_md5 != steps.check.outputs.local_md5
         run: |
           curl -L -o source.zip "https://sourceforge.net/projects/peace-equalizer-apo-extension/files/Source%20code/Source%20code.zip/download"
-          mkdir -p upstream
-          unzip -o source.zip -d upstream
+          unzip -o source.zip -d /tmp/peace-src
+          COUNT=$(ls /tmp/peace-src | wc -l)
+          TOP=$(ls /tmp/peace-src | head -1)
+          if [ "$COUNT" -eq 1 ] && [ -d "/tmp/peace-src/$TOP" ]; then
+            cp -rT "/tmp/peace-src/$TOP" .
+          else
+            cp -rT /tmp/peace-src .
+          fi
+          rm -rf /tmp/peace-src source.zip .github  # restore .github in next step
           echo "${{ steps.check.outputs.remote_md5 }}" > .sourceforge_md5
+
+      - name: Restore .github after extraction
+        if: steps.check.outputs.remote_md5 != steps.check.outputs.local_md5
+        run: git checkout -- .github
 
       - name: Create PR
         if: steps.check.outputs.remote_md5 != steps.check.outputs.local_md5
@@ -49,7 +60,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BRANCH="upstream-sync-${{ steps.check.outputs.remote_md5 }}"
           git checkout -b $BRANCH
-          git add upstream/ .sourceforge_md5
+          git add -A
           git commit -m "Sync upstream source (MD5: ${{ steps.check.outputs.remote_md5 }})"
           git push origin $BRANCH
           gh pr create \
