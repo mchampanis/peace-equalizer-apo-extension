@@ -63,8 +63,9 @@ jobs:
           git add -A
           git commit -m "Sync upstream source (MD5: ${{ steps.check.outputs.remote_md5 }})"
           git push origin $BRANCH
+          DATE=$(date -u +%Y-%m-%d)
           gh pr create \
-            --title "Upstream sync: new Peace source release" \
+            --title "Upstream sync: new Peace source release ($DATE)" \
             --body "New source detected on SourceForge. MD5: ${{ steps.check.outputs.remote_md5 }}" \
             --base main \
             --head $BRANCH
