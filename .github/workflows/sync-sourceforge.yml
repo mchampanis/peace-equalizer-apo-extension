@@ -19,7 +19,7 @@ jobs:
       - name: Check for new source release
         id: check
         run: |
-          MD5=$(curl -s "https://sourceforge.net/projects/peace-equalizer-apo-extension/files/Source%20code/Source%20code.zip/download?use_mirror=autoselect" | md5sum | cut -d' ' -f1)
+          MD5=$(curl -sL "https://sourceforge.net/projects/peace-equalizer-apo-extension/files/Source%20code/Source%20code.zip/download?use_mirror=autoselect" | md5sum | cut -d' ' -f1)
           echo "remote_md5=$MD5" >> $GITHUB_OUTPUT
 
           if [ -f .sourceforge_md5 ]; then
